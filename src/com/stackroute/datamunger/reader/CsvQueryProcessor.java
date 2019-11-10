@@ -1,31 +1,47 @@
 package com.stackroute.datamunger.reader;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import com.stackroute.datamunger.query.DataTypeDefinitions;
 import com.stackroute.datamunger.query.Header;
 
 public class CsvQueryProcessor extends QueryProcessingEngine {
 
+	String fileName;
+	BufferedReader br = null;
+
 	/*
-	 * Parameterized constructor to initialize filename. As you are trying to
+	 * parameterized constructor to initialize filename. As you are trying to
 	 * perform file reading, hence you need to be ready to handle the IO Exceptions.
 	 */
-	
 	public CsvQueryProcessor(String fileName) throws FileNotFoundException {
+		this.fileName = fileName;
+		br = new BufferedReader(new FileReader(fileName));
 
 	}
 
 	/*
-	 * Implementation of getHeader() method. We will have to extract the headers
+	 * implementation of getHeader() method. We will have to extract the headers
 	 * from the first line of the file.
 	 */
-
 	@Override
 	public Header getHeader() throws IOException {
-		
-		return null;
+		Header Head = null;
+
+		br.mark(1);
+		String header = br.readLine();
+		String[] head = header.split(",");
+
+		br.reset();
+		Head = new Header(head);
+		return Head;
 	}
 
 	/**
@@ -37,7 +53,7 @@ public class CsvQueryProcessor extends QueryProcessingEngine {
 	}
 
 	/*
-	 * Implementation of getColumnType() method. To find out the data types, we will
+	 * implementation of getColumnType() method. To find out the data types, we will
 	 * read the first line from the file and extract the field values from it. In
 	 * the previous assignment, we have tried to convert a specific field value to
 	 * Integer or Double. However, in this assignment, we are going to use Regular
@@ -49,29 +65,68 @@ public class CsvQueryProcessor extends QueryProcessingEngine {
 	 * 'mm/dd/yyyy','dd-mon-yy','dd-mon-yyyy','dd-month-yy','dd-month-yyyy','yyyy-mm
 	 * -dd')
 	 */
-	
 	@Override
 	public DataTypeDefinitions getColumnType() throws IOException {
+
 		
-		// checking for Integer
+		DataTypeDefinitions dataTypeDef = null;
+		String[] data = null;
 
-		// checking for floating point numbers
+		br.mark(1);
+		br.readLine();
 
-		// checking for date format dd/mm/yyyy
+		String line2 = br.readLine();
 
-		// checking for date format mm/dd/yyyy
+		br.reset();
 
-		// checking for date format dd-mon-yy
+		line2 += " ,";
+		data = line2.split(",");
+		for (String a : data) {
+			System.out.println(a);
+		}
+		if (data != null) {
+			for (int i = 0; i < data.length; i++) {
 
-		// checking for date format dd-mon-yyyy
+				String reg = "\\d+";
+			
+				String dateReg = "^\\d{4}-\\d{2}-\\d{2}$|^d{2}/\\d{2}/\\d{4}$|\\^d{2}-\\d{2}-\\d{4}$";
+				
+				if ((data[i].matches(reg))) {
+					int a = Integer.parseInt(data[i]);
+					String s = ((Object) a).getClass().getName();
+					data[i] = s;
+				} else if ((data[i].matches(dateReg))) {
+					Date thisDate;
+					DateFormat dateNeed;
+					try {
+						dateNeed = new SimpleDateFormat("yyyy-MM-dd");
+						thisDate = (Date) dateNeed.parse(data[i]);
+						DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+						System.out.println(formatter.format(thisDate));
+						String s = ((Object) thisDate).getClass().getName();
+						data[i] = s;
+						
+					} catch (ParseException e) {
+						e.printStackTrace();
+						System.out.println("error");
+					} 
+				} else if (data[i].matches(" ")) {
+					Object obj = new Object();
+					String s = ((Object) obj).getClass().getName();
+					data[i] = s;
+				} else {
+					String s = (data[i]).getClass().getName();
+					data[i] = s;
+				}
 
-		// checking for date format dd-month-yy
+				
+			}
+		}
 
-		// checking for date format dd-month-yyyy
+		
+		dataTypeDef = new DataTypeDefinitions(data);
+		return dataTypeDef;
 
-		// checking for date format yyyy-mm-dd
-
-		return null;
 	}
 
 }
